@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearningGoalCard from './LearningGoalCard';
 import LoadingSpinner from '../common/LoadingSpinner';
-import apiService from '../../services/api';
 
 const LearningGoalList = ({ showViewAll = false, title = "My Learning Goals" }) => {
   const navigate = useNavigate();
@@ -10,16 +9,29 @@ const LearningGoalList = ({ showViewAll = false, title = "My Learning Goals" }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
   useEffect(() => {
     fetchLearningGoals();
   }, []);
 
   const fetchLearningGoals = async () => {
     try {
-      const data = await apiService.getLearningGoals();
-      setLearningGoals(data.learning_goals || []);
+      if (!user.id) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/learning/goals?user_id=${user.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setLearningGoals(data.learning_goals || []);
+      } else {
+        setError(data.error || 'Failed to load learning goals');
+      }
     } catch (error) {
-      setError(error.message || 'Failed to load learning goals');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

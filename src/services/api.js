@@ -4,40 +4,64 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
+    // Get token from localStorage
     const token = localStorage.getItem('token');
     
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
+    // Debug info
+    console.log('🔐 API Request:', endpoint);
+    console.log('🔐 Token exists:', !!token);
+    if (token) console.log('🔐 Token length:', token.length);
+
+    // Set up headers
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
     };
 
+    // Add Authorization if token exists
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔐 Authorization header added');
     }
+
+    const config = {
+      ...options,
+      headers,
+    };
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
+
+      // Debug response
+      console.log('🔐 Response status:', response.status);
+      const text = await response.text();
+      console.log('🔐 Response body:', text);
+
+      // Parse JSON safely
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = {};
+      }
+
+      // Handle unauthorized
       if (response.status === 401) {
+        console.log('🔐 401 Unauthorized - clearing storage and redirecting');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
-        throw new Error('Authentication failed');
+        throw new Error('Unauthorized');
       }
 
-      const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.error || 'Request failed');
       }
 
       return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
+    } catch (err) {
+      console.error('🔐 API request failed:', err);
+      throw err;
     }
   }
 
@@ -56,7 +80,11 @@ class ApiService {
     });
   }
 
-  // Learning goals endpoints
+  async verifyToken() {
+    return this.request('/auth/verify', { method: 'POST' });
+  }
+
+  // Learning endpoints
   async createLearningGoal(goalData) {
     return this.request('/learning/goals', {
       method: 'POST',
@@ -65,16 +93,17 @@ class ApiService {
   }
 
   async getLearningGoals() {
-    return this.request('/learning/goals');
+    return this.request('/learning/goals', { method: 'GET' });
   }
 
   async getLearningGoal(goalId) {
-    return this.request(`/learning/goals/${goalId}`);
+    return this.request(`/learning/goals/${goalId}`, { method: 'GET' });
   }
 
   async getStudyAnalytics() {
-    return this.request('/learning/analytics');
+    return this.request('/learning/analytics', { method: 'GET' });
   }
 }
 
+// Export single instance
 export default new ApiService();

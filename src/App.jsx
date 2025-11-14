@@ -10,18 +10,10 @@ import LearningGoalDetail from "./components/goals/LearningGoalDetail";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-// Helper function to check if user is authenticated
+// Simple authentication check - just check if user is in localStorage
 const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return false;
-
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const now = Math.floor(Date.now() / 1000);
-    return payload.exp > now;
-  } catch (error) {
-    return false;
-  }
+  const user = localStorage.getItem('user');
+  return !!user;
 };
 
 function App() {
@@ -42,30 +34,30 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              authenticated ? <Dashboard /> : <Navigate to="/login" />
+              authenticated ? <Dashboard /> : <Navigate to="/login" replace />
             }
           />
           <Route
             path="/add-goal"
             element={
-              authenticated ? <AddLearningGoal /> : <Navigate to="/login" />
+              authenticated ? <AddLearningGoal /> : <Navigate to="/login" replace />
             }
           />
           <Route
             path="/goals"
             element={
-              authenticated ? <LearningGoalList /> : <Navigate to="/login" />
+              authenticated ? <LearningGoalList /> : <Navigate to="/login" replace />
             }
           />
           <Route
             path="/goals/:id"
             element={
-              authenticated ? <LearningGoalDetail /> : <Navigate to="/login" />
+              authenticated ? <LearningGoalDetail /> : <Navigate to="/login" replace />
             }
           />
 
           {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>

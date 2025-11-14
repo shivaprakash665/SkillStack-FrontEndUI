@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
-import apiService from '../../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -26,14 +25,27 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const data = await apiService.login(formData.email, formData.password);
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
-      
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Navigate to dashboard
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError(data.error || 'Login failed');
+      }
     } catch (error) {
-      setError(error.message || 'Login failed. Please try again.');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
-import apiService from '../../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -34,19 +33,25 @@ const Register = () => {
     }
 
     try {
-      const data = await apiService.register(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.confirmPassword
-      );
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
-      
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/dashboard');
+      } else {
+        setError(data.error || 'Registration failed');
+      }
     } catch (error) {
-      setError(error.message || 'Registration failed. Please try again.');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

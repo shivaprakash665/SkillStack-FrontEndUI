@@ -5,7 +5,6 @@ import ProgressChart from './ProgressChart';
 import StudyTimeChart from './StudyTimeChart';
 import LearningGoalList from '../goals/LearningGoalList';
 import LoadingSpinner from '../common/LoadingSpinner';
-import apiService from '../../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,17 +23,30 @@ const Dashboard = () => {
     try {
       setError('');
       
-      const [goalsData, analyticsData] = await Promise.all([
-        apiService.getLearningGoals(),
-        apiService.getStudyAnalytics()
-      ]);
+      if (!user.id) {
+        navigate('/login');
+        return;
+      }
+
+      // Fetch goals
+      const goalsResponse = await fetch(`http://localhost:5000/api/learning/goals?user_id=${user.id}`);
+      const goalsData = await goalsResponse.json();
       
-      setLearningGoals(goalsData.learning_goals || []);
-      setAnalytics(analyticsData);
-      
+      if (goalsResponse.ok) {
+        setLearningGoals(goalsData.learning_goals || []);
+      } else {
+        throw new Error(goalsData.error || 'Failed to fetch goals');
+      }
+
+      // Fetch analytics
+      const analyticsResponse = await fetch(`http://localhost:5000/api/learning/analytics?user_id=${user.id}`);
+      if (analyticsResponse.ok) {
+        const analyticsData = await analyticsResponse.json();
+        setAnalytics(analyticsData);
+      }
+
     } catch (error) {
       setError(error.message || 'Failed to load dashboard data');
-      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }

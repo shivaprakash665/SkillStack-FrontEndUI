@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
-import apiService from '../../services/api';
 
 const AddLearningGoal = () => {
   const navigate = useNavigate();
@@ -19,6 +18,8 @@ const AddLearningGoal = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const resourceTypes = [
     { value: 'course', label: 'Course' },
@@ -59,10 +60,33 @@ const AddLearningGoal = () => {
     setError('');
 
     try {
-      await apiService.createLearningGoal(formData);
-      navigate('/goals');
+      if (!user.id) {
+        navigate('/login');
+        return;
+      }
+
+      const requestData = {
+        ...formData,
+        user_id: user.id
+      };
+
+      const response = await fetch('http://localhost:5000/api/learning/goals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigate('/goals');
+      } else {
+        setError(data.error || 'Failed to create learning goal');
+      }
     } catch (error) {
-      setError(error.message || 'Failed to create learning goal');
+      setError('Network error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

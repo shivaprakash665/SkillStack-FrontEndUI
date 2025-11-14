@@ -4,11 +4,11 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = !!localStorage.getItem('token');
+  
+  const isAuthenticated = !!localStorage.getItem('user');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
   };
