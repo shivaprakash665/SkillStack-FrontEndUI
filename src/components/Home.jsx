@@ -33,6 +33,9 @@ const Home = () => {
                   <Link to="/dashboard" className="btn btn-light btn-lg">
                     Go to Dashboard
                   </Link>
+                  <Link to="/add-goal" className="btn btn-outline-light btn-lg">
+                    Add New Goal
+                  </Link>
                 </div>
               )}
             </div>
@@ -92,6 +95,5 @@ const Home = () => {
     </div>
   );
 };
-
 
 export default Home;

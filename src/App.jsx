@@ -1,20 +1,35 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Dashboard from "./components/Dashboard.jsx";
-import Home from "./components/Home";
-import Navigation from "./components/Navigation";
+import Header from "./components/common/Header";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Dashboard from "./components/dashboard/Dashboard";
+import Home from "./components/common/Home";
+import AddLearningGoal from "./components/goals/AddLearningGoal";
+import LearningGoalList from "./components/goals/LearningGoalList";
+import LearningGoalDetail from "./components/goals/LearningGoalDetail";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
+// Helper function to check if user is authenticated
+const isAuthenticated = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now = Math.floor(Date.now() / 1000);
+    return payload.exp > now;
+  } catch (error) {
+    return false;
+  }
+};
+
 function App() {
-  const token = localStorage.getItem("token");
-  const isAuthenticated = !!token;
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const authenticated = isAuthenticated();
 
   return (
     <div className="App">
-      <Navigation />
+      <Header />
       <div className="container-fluid p-0">
         <Routes>
           {/* Public routes */}
@@ -25,11 +40,27 @@ function App() {
 
           {/* Protected routes */}
           <Route
-            path="/dashboard/*"
+            path="/dashboard"
             element={
-              isAuthenticated ? 
-                <Dashboard /> : 
-                <Navigate to="/login" />
+              authenticated ? <Dashboard /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/add-goal"
+            element={
+              authenticated ? <AddLearningGoal /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/goals"
+            element={
+              authenticated ? <LearningGoalList /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/goals/:id"
+            element={
+              authenticated ? <LearningGoalDetail /> : <Navigate to="/login" />
             }
           />
 
