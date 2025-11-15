@@ -49,12 +49,13 @@ function App() {
               authenticated ? <LearningGoalList /> : <Navigate to="/login" replace />
             }
           />
-          <Route
-            path="/goals/:id"
-            element={
-              authenticated ? <LearningGoalDetail /> : <Navigate to="/login" replace />
-            }
-          />
+          // In your App.js, add this route:
+<Route
+  path="/goals/:id"
+  element={
+    authenticated ? <LearningGoalDetail /> : <Navigate to="/login" replace />
+  }
+/>
 
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />

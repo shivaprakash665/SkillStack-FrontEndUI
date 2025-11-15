@@ -1,0 +1,38 @@
+.border-left-secondary {
+  border-left: 4px solid #6c757d !important;
+}
+
+.border-left-primary {
+  border-left: 4px solid #007bff !important;
+}
+
+.border-left-success {
+  border-left: 4px solid #28a745 !important;
+}
+
+.border-left-warning {
+  border-left: 4px solid #ffc107 !important;
+}
+
+/* Drag and drop styles */
+.card {
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Subtopic card drag handle */
+[data-draggable] {
+  cursor: grab;
+}
+
+[data-draggable]:active {
+  cursor: grabbing;
+}
