@@ -6,10 +6,12 @@ const Sidebar = ({ isOpen }) => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const menuItems = [
-    { path: '/dashboard', icon: 'bi-speedometer2', label: 'Dashboard' },
-    { path: '/goals', icon: 'bi-journal-bookmark', label: 'Learning Goals' },
-  ];
+  // In the menuItems array, add:
+const menuItems = [
+  { path: '/dashboard', icon: 'bi-speedometer2', label: 'Dashboard' },
+  { path: '/goals', icon: 'bi-journal-bookmark', label: 'Learning Goals' },
+  { path: '/certificates', icon: 'bi-award', label: 'Certificates' }, 
+];
 
   const handleLogout = () => {
     localStorage.removeItem('user');

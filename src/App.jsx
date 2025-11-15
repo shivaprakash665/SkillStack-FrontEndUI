@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "./components/common/Sidebar";
 import Header from "./components/common/Header";
+import Certificates from './components/Certificates/Certificates';
 import Dashboard from "./components/dashboard/Dashboard";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
@@ -11,6 +12,7 @@ import AddLearningGoal from "./components/goals/AddLearningGoal";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.css";
+
 
 const isAuthenticated = () => {
   const user = localStorage.getItem('user');
@@ -61,8 +63,10 @@ function App() {
             <Route path="/goals" element={<LearningGoalList />} />
             <Route path="/add-goal" element={<AddLearningGoal />} />
             <Route path="/goals/:id" element={<LearningGoalDetail />} />
+            <Route path="/certificates" element={<Certificates />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
           </Routes>
         </div>
       </div>

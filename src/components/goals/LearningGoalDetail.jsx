@@ -31,6 +31,7 @@ const LearningGoalDetail = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -117,6 +118,7 @@ const LearningGoalDetail = () => {
         setSessions(prev => [...prev, data.session]);
         setShowAddModal(false);
         fetchAnalytics();
+        fetchGoalData();
       } else {
         setError(data.error || 'Failed to create subtopic');
       }
@@ -146,19 +148,6 @@ const LearningGoalDetail = () => {
         ));
         fetchAnalytics();
         fetchGoalData();
-        
-        // Check if all subtopics are completed
-        const updatedSessions = sessions.map(s => 
-          s.id === sessionId ? { ...s, status: newStatus } : s
-        );
-        const allCompleted = updatedSessions.every(s => s.status === 'completed');
-        
-        if (allCompleted && goal?.status !== 'completed') {
-          // Auto-complete the main goal
-          setTimeout(() => {
-            fetchGoalData(); // Refresh to show certificate option
-          }, 1000);
-        }
       } else {
         setError(data.error || 'Failed to update status');
       }
@@ -167,6 +156,62 @@ const LearningGoalDetail = () => {
     }
   };
 
+  const handleManualComplete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/learning/goals/${id}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setGoal(data.learning_goal);
+        fetchAnalytics();
+        fetchSessions();
+        setMessage('Goal marked as completed successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setError(data.error || 'Failed to complete goal');
+      }
+    } catch (error) {
+      setError('Network error occurred');
+    }
+  };
+const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/learning/sessions/${sessionId}/notes`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        notes: notes,
+        ai_summary: aiSummary,
+        user_id: user.id
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setSessions(prev => prev.map(session => 
+        session.id === sessionId ? data.session : session
+      ));
+      setMessage('Notes updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } else {
+      setError(data.error || 'Failed to update notes');
+    }
+  } catch (error) {
+    setError('Network error occurred');
+  }
+};
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
@@ -239,6 +284,13 @@ const LearningGoalDetail = () => {
                 <span className="badge bg-primary">{goal?.resource_type}</span>
                 <span className="badge bg-secondary">{goal?.platform}</span>
                 <span className="badge bg-info">{goal?.category}</span>
+                <span className={`badge ${
+                  goal?.status === 'completed' ? 'bg-success' : 
+                  goal?.status === 'in_progress' ? 'bg-warning' : 'bg-secondary'
+                }`}>
+                  {goal?.status === 'completed' ? 'Completed' : 
+                   goal?.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                </span>
                 {goal?.expected_end_date && (
                   <span className="badge bg-warning">
                     <i className="bi bi-calendar me-1"></i>
@@ -246,6 +298,22 @@ const LearningGoalDetail = () => {
                   </span>
                 )}
               </div>
+
+              {/* Manual Completion Button */}
+              {goal?.status !== 'completed' && (
+                <div className="mt-3">
+                  <button 
+                    className="btn btn-success btn-sm"
+                    onClick={handleManualComplete}
+                  >
+                    <i className="bi bi-check-circle me-2"></i>
+                    Mark Goal as Completed
+                  </button>
+                  <small className="text-muted d-block mt-1">
+                    Use this if you've completed the goal outside the system
+                  </small>
+                </div>
+              )}
             </div>
             <div className="text-end">
               <div className="progress mb-2" style={{ width: '200px', height: '20px' }}>
@@ -261,6 +329,20 @@ const LearningGoalDetail = () => {
               </p>
             </div>
           </div>
+
+          {message && (
+            <div className="alert alert-success" role="alert">
+              <i className="bi bi-check-circle me-2"></i>
+              {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              <i className="bi bi-exclamation-triangle me-2"></i>
+              {error}
+            </div>
+          )}
 
           {/* Analytics */}
           {analytics && (
@@ -353,8 +435,8 @@ const LearningGoalDetail = () => {
         </DndContext>
       </div>
 
-      {/* Certificate Upload - Auto-show when all subtopics completed */}
-      {analytics?.completion_percentage === 100 && (
+      {/* Certificate Upload - Show when goal is completed OR all subtopics are completed */}
+      {(goal?.status === 'completed' || analytics?.completion_percentage === 100) && (
         <div className="row mt-4">
           <div className="col-12">
             <div className="card border-success">
@@ -366,7 +448,7 @@ const LearningGoalDetail = () => {
               </div>
               <div className="card-body">
                 <p className="text-muted mb-3">
-                  You've successfully completed all subtopics! Upload your certificate to commemorate this achievement.
+                  You've successfully completed this learning goal! Upload your certificate to commemorate this achievement.
                 </p>
                 <CertificateUpload goalId={goal.id} />
               </div>

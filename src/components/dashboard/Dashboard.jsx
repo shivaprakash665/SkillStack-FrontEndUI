@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [recentGoals, setRecentGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analytics, setAnalytics] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -28,12 +29,16 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch goals from your backend
-      const response = await fetch(`http://localhost:5000/api/learning/goals?user_id=${user.id}`);
-      const data = await response.json();
+      // Fetch goals
+      const goalsResponse = await fetch(`http://localhost:5000/api/learning/goals?user_id=${user.id}`);
+      const goalsData = await goalsResponse.json();
 
-      if (response.ok) {
-        const goals = data.learning_goals || [];
+      // Fetch analytics
+      const analyticsResponse = await fetch(`http://localhost:5000/api/learning/analytics?user_id=${user.id}`);
+      const analyticsData = await analyticsResponse.json();
+
+      if (goalsResponse.ok) {
+        const goals = goalsData.learning_goals || [];
         
         // Calculate stats
         const totalGoals = goals.length;
@@ -51,11 +56,14 @@ const Dashboard = () => {
         // Get recent goals (last 4)
         const sortedGoals = goals.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setRecentGoals(sortedGoals.slice(0, 4));
-      } else {
-        throw new Error(data.error || 'Failed to fetch goals');
+      }
+
+      if (analyticsResponse.ok) {
+        setAnalytics(analyticsData);
       }
     } catch (error) {
       setError(error.message || 'Failed to load dashboard data');
+      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }
@@ -221,6 +229,48 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Analytics Section */}
+      {analytics && (
+        <div className="row mb-4">
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title">Weekly Study Time</h5>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-clock text-primary fs-1 me-3"></i>
+                  <div>
+                    <h3 className="text-primary mb-0">{analytics.weekly_average || 0}h</h3>
+                    <p className="text-muted mb-0">Average per day</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title">Study Distribution</h5>
+                <div className="category-breakdown">
+                  {analytics.category_breakdown && analytics.category_breakdown.length > 0 ? (
+                    analytics.category_breakdown.slice(0, 4).map((category, index) => (
+                      <div key={index} className="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <span className="fw-medium">{category.category || 'Uncategorized'}</span>
+                        <span className="badge bg-primary">{category.hours}h</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-muted py-3">
+                      <i className="bi bi-pie-chart display-6"></i>
+                      <p className="mt-2">No study data available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Recent Goals & Quick Actions */}
       <div className="row">
         <div className="col-lg-8 mb-4">
@@ -317,6 +367,17 @@ const Dashboard = () => {
                   <div className="text-start">
                     <div className="fw-bold">View All Goals</div>
                     <small>See your progress</small>
+                  </div>
+                </button>
+
+                <button 
+                  className="btn btn-outline-success btn-lg d-flex align-items-center justify-content-start p-3"
+                  onClick={() => navigate('/certificates')}
+                >
+                  <i className="bi bi-award fs-4 me-3"></i>
+                  <div className="text-start">
+                    <div className="fw-bold">My Certificates</div>
+                    <small>View achievements</small>
                   </div>
                 </button>
 
