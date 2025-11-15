@@ -4,19 +4,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // In the menuItems array, add:
-const menuItems = [
-  { path: '/dashboard', icon: 'bi-speedometer2', label: 'Dashboard' },
-  { path: '/goals', icon: 'bi-journal-bookmark', label: 'Learning Goals' },
-  { path: '/certificates', icon: 'bi-award', label: 'Certificates' }, 
-];
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
+  const menuItems = [
+    { path: '/dashboard', icon: 'bi-speedometer2', label: 'Dashboard' },
+    { path: '/goals', icon: 'bi-journal-bookmark', label: 'Learning Goals' },
+    { path: '/certificates', icon: 'bi-award', label: 'Certificates' },
+  ];
 
   return (
     <div 
@@ -60,33 +53,6 @@ const menuItems = [
           ))}
         </ul>
       </nav>
-
-      {/* User Info */}
-      <div className="sidebar-footer position-absolute bottom-0 start-0 w-100 p-4 border-top border-secondary">
-        {isOpen ? (
-          <div className="d-flex align-items-center justify-content-between">
-            <div>
-              <h6 className="mb-1 text-white">{user.name || 'User'}</h6>
-              <small className="text-muted">{user.email || 'user@example.com'}</small>
-            </div>
-            <button 
-              className="btn btn-outline-light btn-sm"
-              onClick={handleLogout}
-              title="Logout"
-            >
-              <i className="bi bi-box-arrow-right"></i>
-            </button>
-          </div>
-        ) : (
-          <button 
-            className="btn btn-outline-light btn-sm w-100"
-            onClick={handleLogout}
-            title="Logout"
-          >
-            <i className="bi bi-box-arrow-right"></i>
-          </button>
-        )}
-      </div>
     </div>
   );
 };

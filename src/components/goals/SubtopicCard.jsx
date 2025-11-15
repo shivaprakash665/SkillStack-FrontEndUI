@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import NotesModal from './NotesModal';
 
-const SubtopicCard = ({ session, onStatusChange, onNotesUpdate, isDragging = false }) => {
+const SubtopicCard = ({ session, onStatusChange, onNotesUpdate, onDelete, isDragging = false }) => {
   const [showNotesModal, setShowNotesModal] = useState(false);
   
   const {
@@ -85,25 +85,58 @@ const SubtopicCard = ({ session, onStatusChange, onNotesUpdate, isDragging = fal
           </p>
         )}
 
-        {/* Notes Indicator */}
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <button
-            className="btn btn-outline-secondary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowNotesModal(true);
-            }}
-          >
-            <i className={`bi ${session.notes ? 'bi-journal-text' : 'bi-journal-plus'} me-1`}></i>
-            {session.notes ? 'View Notes' : 'Add Notes'}
-          </button>
-          
-          {session.ai_summary && (
-            <span className="badge bg-info" title="AI Summary Available">
+        {/* Notes Preview */}
+        {session.notes && (
+          <div className="notes-preview mb-2 p-2 bg-light rounded">
+            <small className="text-muted">
+              <strong>Notes:</strong> {session.notes.length > 80 ? session.notes.substring(0, 80) + '...' : session.notes}
+            </small>
+          </div>
+        )}
+
+        {/* AI Summary Preview */}
+        {session.ai_summary && (
+          <div className="ai-summary-preview mb-2 p-2 bg-info bg-opacity-10 rounded">
+            <small className="text-info">
               <i className="bi bi-robot me-1"></i>
-              AI
-            </span>
-          )}
+              <strong>AI Summary:</strong> {session.ai_summary.length > 60 ? session.ai_summary.substring(0, 60) + '...' : session.ai_summary}
+            </small>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <div className="d-flex gap-1">
+            <button
+              className={`btn btn-sm ${session.notes ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNotesModal(true);
+              }}
+              title={session.notes ? "View/Edit Notes" : "Add Notes"}
+            >
+              <i className={`bi ${session.notes ? 'bi-journal-text' : 'bi-journal-plus'}`}></i>
+              {session.notes ? ' View Notes' : ' Add Notes'}
+            </button>
+          </div>
+          
+          <div className="d-flex gap-1">
+            {session.ai_summary && (
+              <span className="badge bg-info" title="AI Summary Available">
+                <i className="bi bi-robot"></i>
+              </span>
+            )}
+            <button
+              className="btn btn-outline-danger btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(session.id);
+              }}
+              title="Delete subtopic"
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
 
         {/* Time Info */}

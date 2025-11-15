@@ -53,6 +53,11 @@ const NotesModal = ({ show, onClose, session, onSave }) => {
     generateAISummary();
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
+  };
+
   return (
     <Modal show={show} onClose={onClose} title="Session Notes" size="lg">
       <div className="notes-modal">
@@ -64,7 +69,7 @@ const NotesModal = ({ show, onClose, session, onSave }) => {
           <textarea
             className="form-control"
             id="notes"
-            rows="6"
+            rows="8"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add your study notes, key points, code snippets, or important concepts here..."
@@ -86,7 +91,7 @@ const NotesModal = ({ show, onClose, session, onSave }) => {
                   <button
                     type="button"
                     className="btn btn-outline-info btn-sm"
-                    onClick={() => navigator.clipboard.writeText(aiSummary)}
+                    onClick={() => copyToClipboard(aiSummary)}
                     title="Copy to clipboard"
                   >
                     <i className="bi bi-clipboard me-1"></i>
@@ -154,6 +159,34 @@ const NotesModal = ({ show, onClose, session, onSave }) => {
               ? "AI is processing your notes. This usually takes 5-10 seconds..." 
               : "Get an AI-powered summary of your notes to help with revision. The AI will extract key concepts and main points."
             }
+          </div>
+        </div>
+
+        {/* Notes Statistics */}
+        <div className="row text-center mb-3">
+          <div className="col-4">
+            <div className="card bg-light">
+              <div className="card-body py-2">
+                <h6 className="mb-0">{notes.length}</h6>
+                <small className="text-muted">Characters</small>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card bg-light">
+              <div className="card-body py-2">
+                <h6 className="mb-0">{notes.split(/\s+/).filter(word => word.length > 0).length}</h6>
+                <small className="text-muted">Words</small>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card bg-light">
+              <div className="card-body py-2">
+                <h6 className="mb-0">{notes.split('.').filter(sentence => sentence.trim().length > 0).length}</h6>
+                <small className="text-muted">Sentences</small>
+              </div>
+            </div>
           </div>
         </div>
 

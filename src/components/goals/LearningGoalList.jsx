@@ -44,6 +44,30 @@ const LearningGoalList = () => {
     }
   };
 
+  const deleteLearningGoal = async (goalId) => {
+    if (!window.confirm('Are you sure you want to delete this learning goal? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/learning/goals/${goalId}?user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setLearningGoals(prev => prev.filter(goal => goal.id !== goalId));
+        setMessage('Learning goal deleted successfully');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setError(data.error || 'Failed to delete learning goal');
+      }
+    } catch (error) {
+      setError('Network error occurred');
+    }
+  };
+
   const filterGoals = () => {
     let filtered = learningGoals;
 
@@ -150,7 +174,10 @@ const LearningGoalList = () => {
         <div className="row">
           {filteredGoals.map(goal => (
             <div key={goal.id} className="col-lg-6 mb-4">
-              <LearningGoalCard goal={goal} />
+              <LearningGoalCard 
+                goal={goal} 
+                onDelete={() => deleteLearningGoal(goal.id)}
+              />
             </div>
           ))}
         </div>

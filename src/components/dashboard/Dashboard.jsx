@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [analytics, setAnalytics] = useState(null);
+  const [dailyStudy, setDailyStudy] = useState([]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -60,6 +61,14 @@ const Dashboard = () => {
 
       if (analyticsResponse.ok) {
         setAnalytics(analyticsData);
+        // Prepare daily study data for chart
+        if (analyticsData.daily_study) {
+          const dailyData = analyticsData.daily_study.map(day => ({
+            date: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+            hours: day.hours
+          }));
+          setDailyStudy(dailyData);
+        }
       }
     } catch (error) {
       setError(error.message || 'Failed to load dashboard data');
@@ -228,49 +237,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Analytics Section */}
-      {analytics && (
-        <div className="row mb-4">
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title">Weekly Study Time</h5>
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-clock text-primary fs-1 me-3"></i>
-                  <div>
-                    <h3 className="text-primary mb-0">{analytics.weekly_average || 0}h</h3>
-                    <p className="text-muted mb-0">Average per day</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title">Study Distribution</h5>
-                <div className="category-breakdown">
-                  {analytics.category_breakdown && analytics.category_breakdown.length > 0 ? (
-                    analytics.category_breakdown.slice(0, 4).map((category, index) => (
-                      <div key={index} className="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <span className="fw-medium">{category.category || 'Uncategorized'}</span>
-                        <span className="badge bg-primary">{category.hours}h</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-muted py-3">
-                      <i className="bi bi-pie-chart display-6"></i>
-                      <p className="mt-2">No study data available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Recent Goals & Quick Actions */}
       <div className="row">
         <div className="col-lg-8 mb-4">

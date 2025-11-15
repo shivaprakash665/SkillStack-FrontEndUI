@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const LearningGoalCard = ({ goal }) => {
+const LearningGoalCard = ({ goal, onDelete }) => {
   const navigate = useNavigate();
 
   const getStatusBadge = (status) => {
@@ -33,7 +33,19 @@ const LearningGoalCard = ({ goal }) => {
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start mb-2">
           <h6 className="card-title mb-0">{goal.title}</h6>
-          {getStatusBadge(goal.status)}
+          <div className="d-flex gap-1">
+            {getStatusBadge(goal.status)}
+            <button 
+              className="btn btn-outline-danger btn-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete goal"
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
         
         {goal.description && (

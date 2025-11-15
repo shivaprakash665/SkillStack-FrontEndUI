@@ -35,6 +35,7 @@ const LearningGoalDetail = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [isSticky, setIsSticky] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -53,6 +54,14 @@ const LearningGoalDetail = () => {
     fetchGoalData();
     fetchSessions();
     fetchAnalytics();
+    
+    // Add scroll event listener for sticky header
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 100);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [id]);
 
   const fetchGoalData = async () => {
@@ -119,6 +128,8 @@ const LearningGoalDetail = () => {
         setShowAddModal(false);
         fetchAnalytics();
         fetchGoalData();
+        setMessage('Subtopic added successfully!');
+        setTimeout(() => setMessage(''), 3000);
       } else {
         setError(data.error || 'Failed to create subtopic');
       }
@@ -183,35 +194,85 @@ const LearningGoalDetail = () => {
       setError('Network error occurred');
     }
   };
-const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/learning/sessions/${sessionId}/notes`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        notes: notes,
-        ai_summary: aiSummary,
-        user_id: user.id
-      })
-    });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      setSessions(prev => prev.map(session => 
-        session.id === sessionId ? data.session : session
-      ));
-      setMessage('Notes updated successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } else {
-      setError(data.error || 'Failed to update notes');
+  const deleteSession = async (sessionId) => {
+    if (!window.confirm('Are you sure you want to delete this subtopic? This action cannot be undone.')) {
+      return;
     }
-  } catch (error) {
-    setError('Network error occurred');
-  }
-};
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/learning/sessions/${sessionId}?user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSessions(prev => prev.filter(session => session.id !== sessionId));
+        fetchAnalytics();
+        fetchGoalData();
+        setMessage('Subtopic deleted successfully');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setError(data.error || 'Failed to delete subtopic');
+      }
+    } catch (error) {
+      setError('Network error occurred');
+    }
+  };
+
+  const deleteGoal = async () => {
+    if (!window.confirm('Are you sure you want to delete this learning goal? All subtopics and data will be permanently deleted.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/learning/goals/${id}?user_id=${user.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigate('/goals');
+      } else {
+        setError(data.error || 'Failed to delete learning goal');
+      }
+    } catch (error) {
+      setError('Network error occurred');
+    }
+  };
+
+  const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/learning/sessions/${sessionId}/notes`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notes: notes,
+          ai_summary: aiSummary,
+          user_id: user.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSessions(prev => prev.map(session => 
+          session.id === sessionId ? data.session : session
+        ));
+        setMessage('Notes updated successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setError(data.error || 'Failed to update notes');
+      }
+    } catch (error) {
+      setError('Network error occurred');
+    }
+  };
+
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
@@ -264,8 +325,8 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
 
   return (
     <div className="learning-goal-detail fade-in">
-      {/* Header */}
-      <div className="card mb-4">
+      {/* Sticky Header */}
+      <div className={`card mb-4 ${isSticky ? 'sticky-header' : ''}`}>
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-start mb-3">
             <div>
@@ -303,11 +364,18 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
               {goal?.status !== 'completed' && (
                 <div className="mt-3">
                   <button 
-                    className="btn btn-success btn-sm"
+                    className="btn btn-success btn-sm me-2"
                     onClick={handleManualComplete}
                   >
                     <i className="bi bi-check-circle me-2"></i>
                     Mark Goal as Completed
+                  </button>
+                  <button 
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={deleteGoal}
+                  >
+                    <i className="bi bi-trash me-2"></i>
+                    Delete Goal
                   </button>
                   <small className="text-muted d-block mt-1">
                     Use this if you've completed the goal outside the system
@@ -385,6 +453,7 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
               </div>
             </div>
           )}
+          
         </div>
       </div>
 
@@ -403,6 +472,8 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
               status="not_started"
               sessions={getSessionsByStatus('not_started')}
               onStatusChange={handleStatusChange}
+              onDelete={deleteSession}
+              onNotesUpdate={handleNotesUpdate}
               color="secondary"
             />
             <SubtopicBoard
@@ -410,6 +481,8 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
               status="in_progress"
               sessions={getSessionsByStatus('in_progress')}
               onStatusChange={handleStatusChange}
+              onDelete={deleteSession}
+              onNotesUpdate={handleNotesUpdate}
               color="primary"
             />
             <SubtopicBoard
@@ -417,6 +490,8 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
               status="completed"
               sessions={getSessionsByStatus('completed')}
               onStatusChange={handleStatusChange}
+              onDelete={deleteSession}
+              onNotesUpdate={handleNotesUpdate}
               color="success"
             />
           </div>
@@ -427,6 +502,8 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
                 <SubtopicCard 
                   session={activeSession} 
                   onStatusChange={handleStatusChange}
+                  onDelete={deleteSession}
+                  onNotesUpdate={handleNotesUpdate}
                   isDragging
                 />
               </div>
@@ -435,7 +512,7 @@ const handleNotesUpdate = async (sessionId, notes, aiSummary) => {
         </DndContext>
       </div>
 
-      {/* Certificate Upload - Show when goal is completed OR all subtopics are completed */}
+      {/* Certificate Upload */}
       {(goal?.status === 'completed' || analytics?.completion_percentage === 100) && (
         <div className="row mt-4">
           <div className="col-12">

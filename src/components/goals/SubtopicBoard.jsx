@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SubtopicCard from './SubtopicCard';
 
-const SubtopicBoard = ({ title, status, sessions, onStatusChange, color }) => {
+const SubtopicBoard = ({ title, status, sessions, onStatusChange, onDelete, onNotesUpdate, color }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: status,
   });
@@ -18,13 +18,25 @@ const SubtopicBoard = ({ title, status, sessions, onStatusChange, color }) => {
     return colors[color] || 'border-left-secondary';
   };
 
+  // Count sessions with notes
+  const sessionsWithNotes = sessions.filter(s => s.notes).length;
+  const sessionsWithAISummary = sessions.filter(s => s.ai_summary).length;
+
   return (
     <div className="col-md-4 mb-4">
       <div className={`card h-100 border-left-3 ${getColorClass()}`}>
         <div className="card-header bg-transparent">
           <h5 className="card-title mb-0 d-flex justify-content-between align-items-center">
             <span>{title}</span>
-            <span className="badge bg-secondary">{sessions.length}</span>
+            <div className="d-flex gap-2">
+              {sessionsWithNotes > 0 && (
+                <span className="badge bg-info" title={`${sessionsWithNotes} subtopics with notes`}>
+                  <i className="bi bi-journal-text me-1"></i>
+                  {sessionsWithNotes}
+                </span>
+              )}
+              <span className="badge bg-secondary">{sessions.length}</span>
+            </div>
           </h5>
         </div>
         <div 
@@ -38,6 +50,8 @@ const SubtopicBoard = ({ title, status, sessions, onStatusChange, color }) => {
                 key={session.id}
                 session={session}
                 onStatusChange={onStatusChange}
+                onDelete={onDelete}
+                onNotesUpdate={onNotesUpdate}
               />
             ))}
           </SortableContext>
