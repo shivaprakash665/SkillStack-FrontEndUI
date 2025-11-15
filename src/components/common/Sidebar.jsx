@@ -25,7 +25,7 @@ const Sidebar = ({ isOpen }) => {
         <div className="d-flex align-items-center">
           <i className="bi bi-journal-bookmark fs-3 text-primary"></i>
           {isOpen && (
-            <span className="ms-3 fs-4 fw-bold text-white">LearnTrack</span>
+            <span className="ms-3 fs-4 fw-bold text-white">SkillStack</span>
           )}
         </div>
       </div>
