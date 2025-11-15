@@ -17,14 +17,12 @@ import {
 } from '@dnd-kit/sortable';
 import {
   restrictToVerticalAxis,
-  restrictToWindowEdges,
 } from '@dnd-kit/modifiers';
 import SubtopicBoard from './SubtopicBoard';
 import SubtopicCard from './SubtopicCard';
 import AddSubtopicModal from './AddSubtopicModal';
 import CertificateUpload from './CertificateUpload';
 import LoadingSpinner from '../common/LoadingSpinner';
-import './LearningGoalDetail.css';
 
 const LearningGoalDetail = () => {
   const { id } = useParams();
@@ -40,7 +38,11 @@ const LearningGoalDetail = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -143,7 +145,20 @@ const LearningGoalDetail = () => {
           session.id === sessionId ? data.session : session
         ));
         fetchAnalytics();
-        fetchGoalData(); // Refresh goal progress
+        fetchGoalData();
+        
+        // Check if all subtopics are completed
+        const updatedSessions = sessions.map(s => 
+          s.id === sessionId ? { ...s, status: newStatus } : s
+        );
+        const allCompleted = updatedSessions.every(s => s.status === 'completed');
+        
+        if (allCompleted && goal?.status !== 'completed') {
+          // Auto-complete the main goal
+          setTimeout(() => {
+            fetchGoalData(); // Refresh to show certificate option
+          }, 1000);
+        }
       } else {
         setError(data.error || 'Failed to update status');
       }
@@ -169,7 +184,6 @@ const LearningGoalDetail = () => {
       const newSessions = arrayMove(sessions, oldIndex, newIndex);
       setSessions(newSessions);
 
-      // Update order in backend
       try {
         await fetch(`http://localhost:5000/api/learning/sessions/${active.id}/order`, {
           method: 'PUT',
@@ -203,110 +217,103 @@ const LearningGoalDetail = () => {
     return <LoadingSpinner text="Loading learning goal..." />;
   }
 
-  if (error) {
-    return (
-      <div className="min-vh-100 bg-light py-4">
-        <div className="container">
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-vh-100 bg-light py-4">
-      <div className="container">
-        {/* Header */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <button 
-                      className="btn btn-outline-secondary btn-sm mb-3"
-                      onClick={() => navigate('/goals')}
-                    >
-                      <i className="bi bi-arrow-left me-2"></i>
-                      Back to Goals
-                    </button>
-                    <h1 className="h2 mb-2">{goal?.title}</h1>
-                    {goal?.description && (
-                      <p className="text-muted mb-3">{goal.description}</p>
-                    )}
-                    <div className="d-flex gap-3 flex-wrap">
-                      <span className="badge bg-primary">{goal?.resource_type}</span>
-                      <span className="badge bg-secondary">{goal?.platform}</span>
-                      <span className="badge bg-info">{goal?.category}</span>
-                    </div>
-                  </div>
-                  <div className="text-end">
-                    <div className="progress mb-2" style={{ width: '200px', height: '20px' }}>
-                      <div 
-                        className="progress-bar" 
-                        style={{ width: `${goal?.progress_percentage || 0}%` }}
-                      >
-                        {goal?.progress_percentage}%
-                      </div>
-                    </div>
-                    <p className="text-muted mb-0">
-                      {analytics?.completed_sessions || 0} of {analytics?.total_sessions || 0} subtopics completed
-                    </p>
-                  </div>
-                </div>
-
-                {/* Analytics */}
-                {analytics && (
-                  <div className="row mt-4">
-                    <div className="col-md-3">
-                      <div className="card bg-light">
-                        <div className="card-body text-center">
-                          <h5 className="card-title">Total Time</h5>
-                          <h3 className="text-primary">{analytics.total_time_spent}h</h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="card bg-light">
-                        <div className="card-body text-center">
-                          <h5 className="card-title">Avg Time/Subtopic</h5>
-                          <h3 className="text-info">{analytics.average_time_per_session}h</h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="card bg-light">
-                        <div className="card-body text-center">
-                          <h5 className="card-title">Completion</h5>
-                          <h3 className="text-success">{analytics.completion_percentage}%</h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <button 
-                        className="btn btn-primary w-100 h-100"
-                        onClick={() => setShowAddModal(true)}
-                      >
-                        <i className="bi bi-plus-circle me-2"></i>
-                        Add Subtopic
-                      </button>
-                    </div>
-                  </div>
+    <div className="learning-goal-detail fade-in">
+      {/* Header */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <button 
+                className="btn btn-outline-secondary btn-sm mb-3"
+                onClick={() => navigate('/goals')}
+              >
+                <i className="bi bi-arrow-left me-2"></i>
+                Back to Goals
+              </button>
+              <h1 className="h3 mb-2">{goal?.title}</h1>
+              {goal?.description && (
+                <p className="text-muted mb-3">{goal.description}</p>
+              )}
+              <div className="d-flex gap-2 flex-wrap">
+                <span className="badge bg-primary">{goal?.resource_type}</span>
+                <span className="badge bg-secondary">{goal?.platform}</span>
+                <span className="badge bg-info">{goal?.category}</span>
+                {goal?.expected_end_date && (
+                  <span className="badge bg-warning">
+                    <i className="bi bi-calendar me-1"></i>
+                    Due: {new Date(goal.expected_end_date).toLocaleDateString()}
+                  </span>
                 )}
               </div>
             </div>
+            <div className="text-end">
+              <div className="progress mb-2" style={{ width: '200px', height: '20px' }}>
+                <div 
+                  className="progress-bar" 
+                  style={{ width: `${goal?.progress_percentage || 0}%` }}
+                >
+                  {goal?.progress_percentage}%
+                </div>
+              </div>
+              <p className="text-muted mb-0">
+                {analytics?.completed_sessions || 0} of {analytics?.total_sessions || 0} subtopics completed
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Kanban Board */}
+          {/* Analytics */}
+          {analytics && (
+            <div className="row mt-4">
+              <div className="col-md-3">
+                <div className="card bg-light border-0">
+                  <div className="card-body text-center py-3">
+                    <h5 className="card-title text-muted small">Total Time</h5>
+                    <h3 className="text-primary mb-0">{analytics.total_time_spent}h</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-light border-0">
+                  <div className="card-body text-center py-3">
+                    <h5 className="card-title text-muted small">Avg Time/Subtopic</h5>
+                    <h3 className="text-info mb-0">{analytics.average_time_per_session}h</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-light border-0">
+                  <div className="card-body text-center py-3">
+                    <h5 className="card-title text-muted small">Completion</h5>
+                    <h3 className="text-success mb-0">{analytics.completion_percentage}%</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <button 
+                  className="btn btn-primary w-100 h-100 d-flex align-items-center justify-content-center"
+                  onClick={() => setShowAddModal(true)}
+                  style={{ minHeight: '80px' }}
+                >
+                  <div>
+                    <i className="bi bi-plus-circle display-6 d-block mb-2"></i>
+                    <span>Add Subtopic</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="kanban-container">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
           onDragStart={handleDragStart}
-          modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
+          modifiers={[restrictToVerticalAxis]}
         >
           <div className="row">
             <SubtopicBoard
@@ -334,32 +341,47 @@ const LearningGoalDetail = () => {
           
           <DragOverlay>
             {activeSession ? (
-              <SubtopicCard 
-                session={activeSession} 
-                onStatusChange={handleStatusChange}
-                isDragging
-              />
+              <div style={{ transform: 'rotate(5deg)', opacity: 0.8 }}>
+                <SubtopicCard 
+                  session={activeSession} 
+                  onStatusChange={handleStatusChange}
+                  isDragging
+                />
+              </div>
             ) : null}
           </DragOverlay>
         </DndContext>
+      </div>
 
-        {/* Certificate Upload - Show when goal is completed */}
-        {goal?.status === 'completed' && (
-          <div className="row mt-4">
-            <div className="col-12">
-              <CertificateUpload goalId={goal.id} />
+      {/* Certificate Upload - Auto-show when all subtopics completed */}
+      {analytics?.completion_percentage === 100 && (
+        <div className="row mt-4">
+          <div className="col-12">
+            <div className="card border-success">
+              <div className="card-header bg-success text-white">
+                <h5 className="card-title mb-0">
+                  <i className="bi bi-award me-2"></i>
+                  Congratulations! Goal Completed
+                </h5>
+              </div>
+              <div className="card-body">
+                <p className="text-muted mb-3">
+                  You've successfully completed all subtopics! Upload your certificate to commemorate this achievement.
+                </p>
+                <CertificateUpload goalId={goal.id} />
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Add Subtopic Modal */}
-        {showAddModal && (
-          <AddSubtopicModal
-            onClose={() => setShowAddModal(false)}
-            onSave={handleAddSubtopic}
-          />
-        )}
-      </div>
+      {/* Add Subtopic Modal */}
+      {showAddModal && (
+        <AddSubtopicModal
+          onClose={() => setShowAddModal(false)}
+          onSave={handleAddSubtopic}
+        />
+      )}
     </div>
   );
 };

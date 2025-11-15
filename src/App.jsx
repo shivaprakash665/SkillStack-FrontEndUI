@@ -1,65 +1,70 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import Sidebar from "./components/common/Sidebar";
 import Header from "./components/common/Header";
+import Dashboard from "./components/dashboard/Dashboard";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
-import Dashboard from "./components/dashboard/Dashboard";
-import Home from "./components/common/Home";
-import AddLearningGoal from "./components/goals/AddLearningGoal";
 import LearningGoalList from "./components/goals/LearningGoalList";
 import LearningGoalDetail from "./components/goals/LearningGoalDetail";
+import AddLearningGoal from "./components/goals/AddLearningGoal";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import "./App.css";
 
-// Simple authentication check - just check if user is in localStorage
 const isAuthenticated = () => {
   const user = localStorage.getItem('user');
   return !!user;
 };
 
 function App() {
-  const authenticated = isAuthenticated();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setAuthenticated(isAuthenticated());
+  }, [location]);
+
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  if (isAuthPage) {
+    return (
+      <div className="App">
+        <Routes>
+          <Route path="/login" element={<Login onLogin={() => setAuthenticated(true)} />} />
+          <Route path="/register" element={<Register onRegister={() => setAuthenticated(true)} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="App">
+        <Routes>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
-      <Header />
-      <div className="container-fluid p-0">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-
-          {/* Protected routes */}
-          <Route
-            path="/dashboard"
-            element={
-              authenticated ? <Dashboard /> : <Navigate to="/login" replace />
-            }
-          />
-          <Route
-            path="/add-goal"
-            element={
-              authenticated ? <AddLearningGoal /> : <Navigate to="/login" replace />
-            }
-          />
-          <Route
-            path="/goals"
-            element={
-              authenticated ? <LearningGoalList /> : <Navigate to="/login" replace />
-            }
-          />
-          // In your App.js, add this route:
-<Route
-  path="/goals/:id"
-  element={
-    authenticated ? <LearningGoalDetail /> : <Navigate to="/login" replace />
-  }
-/>
-
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      <Sidebar isOpen={sidebarOpen} />
+      <div className={`main-content ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+        <div className="content-wrapper">
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/goals" element={<LearningGoalList />} />
+            <Route path="/add-goal" element={<AddLearningGoal />} />
+            <Route path="/goals/:id" element={<LearningGoalDetail />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );

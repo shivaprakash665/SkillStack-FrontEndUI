@@ -3,17 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import LearningGoalCard from './LearningGoalCard';
 import LoadingSpinner from '../common/LoadingSpinner';
 
-const LearningGoalList = ({ showViewAll = false, title = "My Learning Goals" }) => {
+const LearningGoalList = () => {
   const navigate = useNavigate();
   const [learningGoals, setLearningGoals] = useState([]);
+  const [filteredGoals, setFilteredGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     fetchLearningGoals();
   }, []);
+
+  useEffect(() => {
+    filterGoals();
+  }, [learningGoals, searchTerm, statusFilter]);
 
   const fetchLearningGoals = async () => {
     try {
@@ -37,34 +44,100 @@ const LearningGoalList = ({ showViewAll = false, title = "My Learning Goals" }) 
     }
   };
 
+  const filterGoals = () => {
+    let filtered = learningGoals;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(goal => 
+        goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        goal.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(goal => goal.status === statusFilter);
+    }
+
+    setFilteredGoals(filtered);
+  };
+
   if (loading) {
     return <LoadingSpinner text="Loading learning goals..." />;
   }
 
   return (
-    <div className="card">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="card-title mb-0">{title}</h5>
-        {showViewAll && learningGoals.length > 5 && (
-          <button 
-            className="btn btn-sm btn-outline-primary"
-            onClick={() => navigate('/goals')}
-          >
-            View All
-          </button>
-        )}
+    <div className="learning-goals-container fade-in">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 className="h2 fw-bold text-dark mb-2">My Learning Goals</h1>
+          <p className="text-muted">Track and manage your learning objectives</p>
+        </div>
+        <button 
+          className="btn btn-primary btn-lg"
+          onClick={() => navigate('/add-goal')}
+        >
+          <i className="bi bi-plus-circle me-2"></i>
+          Add New Goal
+        </button>
       </div>
-      <div className="card-body">
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
 
-        {learningGoals.length === 0 ? (
-          <div className="text-center py-4">
-            <i className="bi bi-journal-x display-4 text-muted mb-3"></i>
-            <p className="text-muted">No learning goals yet.</p>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="input-group">
+                <span className="input-group-text bg-light border-end-0">
+                  <i className="bi bi-search text-muted"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-start-0"
+                  placeholder="Search goals..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="not_started">Not Started</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <div className="text-muted small">
+                {filteredGoals.length} goal{filteredGoals.length !== 1 ? 's' : ''} found
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Goals Grid */}
+      {filteredGoals.length === 0 ? (
+        <div className="card text-center py-5">
+          <div className="card-body">
+            <i className="bi bi-journal-x display-1 text-muted mb-3"></i>
+            <h5 className="text-muted">No learning goals found</h5>
+            <p className="text-muted mb-3">
+              {searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters' : 'Start by creating your first learning goal'}
+            </p>
             <button 
               className="btn btn-primary"
               onClick={() => navigate('/add-goal')}
@@ -72,16 +145,16 @@ const LearningGoalList = ({ showViewAll = false, title = "My Learning Goals" }) 
               Create Your First Goal
             </button>
           </div>
-        ) : (
-          <div className="row">
-            {(showViewAll ? learningGoals.slice(0, 5) : learningGoals).map(goal => (
-              <div key={goal.id} className="col-lg-6 mb-3">
-                <LearningGoalCard goal={goal} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="row">
+          {filteredGoals.map(goal => (
+            <div key={goal.id} className="col-lg-6 mb-4">
+              <LearningGoalCard goal={goal} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

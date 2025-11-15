@@ -1,0 +1,49 @@
+/* App.css - Add these styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.main-content {
+  margin-left: 280px; /* Default for sidebar-open */
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  width: calc(100% - 280px);
+}
+
+.main-content.sidebar-closed {
+  margin-left: 80px;
+  width: calc(100% - 80px);
+}
+
+.content-wrapper {
+  padding: 20px;
+  min-height: calc(100vh - 80px);
+}
+
+/* Ensure proper spacing for navbar */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+}

@@ -1,83 +1,47 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
 
-const Header = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const isAuthenticated = !!localStorage.getItem('user');
+const Header = ({ onMenuToggle }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/login');
+  const getPageTitle = () => {
+    const titles = {
+      '/dashboard': 'Dashboard',
+      '/goals': 'Learning Goals',
+      '/add-goal': 'Add Learning Goal'
+    };
+    
+    if (location.pathname.startsWith('/goals/')) {
+      return 'Goal Details';
+    }
+    
+    return titles[location.pathname] || 'LearnTrack';
   };
 
-  if (location.pathname === '/login' || location.pathname === '/register') {
-    return null;
-  }
-
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-      <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">
-          <i className="bi bi-journal-bookmark me-2"></i>
-          SkillStack
-        </Link>
+    <nav className="navbar navbar-light bg-white shadow-sm border-bottom">
+      <div className="container-fluid">
+        <div className="d-flex align-items-center">
+          <button 
+            className="btn btn-light me-3"
+            onClick={onMenuToggle}
+          >
+            <i className="bi bi-list"></i>
+          </button>
+          <h4 className="mb-0 fw-bold text-dark">{getPageTitle()}</h4>
+        </div>
         
-        <button 
-          className="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarNav"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <Link className="nav-link" to="/">Home</Link>
-            </li>
-            {isAuthenticated && (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/dashboard">Dashboard</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/goals">My Goals</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/add-goal">Add Goal</Link>
-                </li>
-              </>
-            )}
-          </ul>
-          
-          <div className="navbar-nav">
-            {isAuthenticated ? (
-              <div className="d-flex align-items-center">
-                <span className="navbar-text me-3">
-                  Welcome, <strong>{user.name}</strong>
-                </span>
-                <button 
-                  className="btn btn-outline-light btn-sm"
-                  onClick={handleLogout}
-                >
-                  <i className="bi bi-box-arrow-right me-1"></i>
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="d-flex gap-2">
-                <Link to="/login" className="btn btn-outline-light btn-sm">
-                  Login
-                </Link>
-                <Link to="/register" className="btn btn-light btn-sm">
-                  Sign Up
-                </Link>
-              </div>
-            )}
+        <div className="d-flex align-items-center">
+          <div className="me-3 text-end d-none d-md-block">
+            <div className="fw-medium text-dark">{user.name}</div>
+            <small className="text-muted">Welcome back!</small>
+          </div>
+          <div className="dropdown">
+            <button 
+              className="btn btn-light rounded-circle"
+              style={{ width: '45px', height: '45px' }}
+            >
+              <i className="bi bi-person-fill text-primary"></i>
+            </button>
           </div>
         </div>
       </div>

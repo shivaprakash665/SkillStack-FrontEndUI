@@ -14,33 +14,31 @@ const SubtopicCard = ({ session, onStatusChange, isDragging = false }) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const getStatusOptions = (currentStatus) => {
-    const options = {
-      not_started: ['in_progress'],
-      in_progress: ['not_started', 'completed'],
-      completed: ['in_progress']
-    };
-    return options[currentStatus] || [];
+    opacity: isDragging ? 0.6 : 1,
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return 'N/A';
-    return new Date(timeString).toLocaleDateString();
+    if (!timeString) return null;
+    return new Date(timeString).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getTimeInfo = () => {
     switch (session.status) {
       case 'completed':
-        return `Completed: ${formatTime(session.time_completed)}`;
+        return { text: `Completed: ${formatTime(session.time_completed)}`, icon: 'bi-check-circle-fill text-success' };
       case 'in_progress':
-        return `Started: ${formatTime(session.time_started)}`;
+        return { text: `Started: ${formatTime(session.time_started)}`, icon: 'bi-play-circle-fill text-primary' };
       default:
-        return `Added: ${formatTime(session.time_added)}`;
+        return { text: `Added: ${formatTime(session.time_added)}`, icon: 'bi-plus-circle text-muted' };
     }
   };
+
+  const timeInfo = getTimeInfo();
 
   return (
     <div
@@ -48,39 +46,65 @@ const SubtopicCard = ({ session, onStatusChange, isDragging = false }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className={`card mb-3 ${isDragging ? 'shadow-lg' : 'shadow-sm'}`}
+      className={`subtopic-card ${session.status === 'completed' ? 'success' : session.status === 'in_progress' ? 'primary' : ''} ${
+        isDragging ? 'shadow-lg' : ''
+      }`}
     >
-      <div className="card-body">
-        <h6 className="card-title">{session.title}</h6>
-        
-        {session.description && (
-          <p className="card-text text-muted small">{session.description}</p>
-        )}
-
-        <div className="small text-muted mb-2">
-          <div>{getTimeInfo()}</div>
-          {session.total_time_spent > 0 && (
-            <div>Time spent: {session.total_time_spent}h</div>
-          )}
-        </div>
-
-        <div className="d-flex justify-content-between align-items-center">
-          <select
-            className="form-select form-select-sm"
-            value={session.status}
-            onChange={(e) => onStatusChange(session.id, e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <option value="not_started">Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-          
-          <span className={`badge bg-${session.status === 'completed' ? 'success' : session.status === 'in_progress' ? 'primary' : 'secondary'}`}>
-            {session.status === 'completed' ? 'Done' : session.status === 'in_progress' ? 'In Progress' : 'Not Started'}
-          </span>
-        </div>
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <h6 className="mb-0 text-truncate" style={{ maxWidth: '70%' }}>
+          {session.title}
+        </h6>
+        <select
+          className="form-select form-select-sm"
+          value={session.status}
+          onChange={(e) => onStatusChange(session.id, e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          style={{ width: 'auto', minWidth: '120px' }}
+        >
+          <option value="not_started">Not Started</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
       </div>
+
+      {/* Description */}
+      {session.description && (
+        <p className="small text-muted mb-2 text-truncate">
+          {session.description}
+        </p>
+      )}
+
+      {/* Time Info */}
+      <div className="d-flex justify-content-between align-items-center">
+        <small className="text-muted">
+          <i className={`${timeInfo.icon} me-1`}></i>
+          {timeInfo.text}
+        </small>
+        
+        {session.total_time_spent > 0 && (
+          <small className="text-dark fw-bold">
+            {session.total_time_spent}h
+          </small>
+        )}
+      </div>
+
+      {/* Progress for in-progress items */}
+      {session.status === 'in_progress' && session.estimated_hours > 0 && (
+        <div className="mt-2">
+          <div className="progress" style={{ height: '4px' }}>
+            <div 
+              className="progress-bar" 
+              style={{ 
+                width: `${Math.min((session.actual_hours / session.estimated_hours) * 100, 100)}%` 
+              }}
+            ></div>
+          </div>
+          <small className="text-muted">
+            {session.actual_hours || 0}h / {session.estimated_hours}h
+          </small>
+        </div>
+      )}
     </div>
   );
 };
